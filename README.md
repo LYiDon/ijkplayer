@@ -1,4 +1,5 @@
 # ijkplayer
+# 该项目是为了学习ijkplayer代码
 
  Platform | Build Status
  -------- | ------------
