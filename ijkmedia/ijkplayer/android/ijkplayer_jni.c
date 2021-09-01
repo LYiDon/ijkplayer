@@ -777,11 +777,11 @@ inject_callback(void *opaque, int what, void *data, size_t data_size)
     JNIEnv     *env     = NULL;
     jobject     jbundle = NULL;
     int         ret     = -1;
-    SDL_JNI_SetupThreadEnv(&env);
+    SDL_JNI_SetupThreadEnv(&env); //通过单例方式获取JNIEnv
 
     jobject weak_thiz = (jobject) opaque;
     if (weak_thiz == NULL )
-        goto fail;
+        goto fail;      
     switch (what) {
         case AVAPP_CTRL_WILL_HTTP_OPEN:
         case AVAPP_CTRL_WILL_LIVE_OPEN:
@@ -1199,9 +1199,9 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
     (*env)->RegisterNatives(env, g_clazz.clazz, g_methods, NELEM(g_methods) );  //註冊需要使用的方法
 
     ijkmp_global_init();  //初始FFmpeg內的信息配置
-    ijkmp_global_set_inject_callback(inject_callback);
+    ijkmp_global_set_inject_callback(inject_callback); //注册方法回调
 
-    FFmpegApi_global_init(env);
+    FFmpegApi_global_init(env); //初始化FFmpegApi_av_base64_encode方法
 
     return JNI_VERSION_1_4;
 }
