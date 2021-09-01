@@ -30,7 +30,7 @@
 #include "ff_ffplay.h"
 #include "ijkplayer.h"
 
-struct IjkMediaPlayer {
+struct IjkMediaPlayer { //表示native层的Player，与Java层一对一绑定。作为Java到c的入口封装
     volatile int ref_count;
     pthread_mutex_t mutex;
     FFPlayer *ffplayer;
@@ -40,7 +40,7 @@ struct IjkMediaPlayer {
     SDL_Thread _msg_thread;
 
     int mp_state;
-    char *data_source;
+    char *data_source;  //视频文件地址
     void *weak_thiz;
 
     int restart;

@@ -272,7 +272,7 @@ typedef struct Decoder {
     int    first_frame_decoded;
 } Decoder;
 
-typedef struct VideoState {
+typedef struct VideoState { //在stream_open中被创建，表示播放过程中的所有状态。
     SDL_Thread *read_tid;
     SDL_Thread _read_tid;
     AVInputFormat *iformat;

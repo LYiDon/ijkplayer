@@ -1196,9 +1196,9 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *reserved)
 
     // FindClass returns LocalReference
     IJK_FIND_JAVA_CLASS(env, g_clazz.clazz, JNI_CLASS_IJKPLAYER);
-    (*env)->RegisterNatives(env, g_clazz.clazz, g_methods, NELEM(g_methods) );
+    (*env)->RegisterNatives(env, g_clazz.clazz, g_methods, NELEM(g_methods) );  //註冊需要使用的方法
 
-    ijkmp_global_init();
+    ijkmp_global_init();  //初始FFmpeg內的信息配置
     ijkmp_global_set_inject_callback(inject_callback);
 
     FFmpegApi_global_init(env);
