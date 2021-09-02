@@ -36,7 +36,7 @@ static SDL_Class g_pipeline_class = {
 typedef struct IJKFF_Pipeline_Opaque {
     FFPlayer      *ffp;
     SDL_mutex     *surface_mutex;
-    jobject        jsurface;
+    jobject        jsurface; //全局引用surface
     volatile bool  is_surface_need_reconfigure;
 
     bool         (*mediacodec_select_callback)(void *opaque, ijkmp_mediacodecinfo_context *mcc);
@@ -225,7 +225,7 @@ int ffpipeline_set_surface(JNIEnv *env, IJKFF_Pipeline* pipeline, jobject surfac
         } else {
             SDL_VoutAndroid_setAMediaCodec(opaque->weak_vout, NULL);
             if (surface) {
-                opaque->jsurface = (*env)->NewGlobalRef(env, surface);
+                opaque->jsurface = (*env)->NewGlobalRef(env, surface); //全局引用surface
             } else {
                 opaque->jsurface = NULL;
             }

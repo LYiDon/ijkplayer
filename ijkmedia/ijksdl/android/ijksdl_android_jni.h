@@ -84,6 +84,7 @@ int     SDL_Android_GetApiLevel();
         (*env__)->DeleteLocalRef(env__, clazz); \
     } while(0);
 
+// 触发java中的错误信息
 #define JNI_CHECK_GOTO(condition__, env__, exception__, msg__, label__) \
     do { \
         if (!(condition__)) { \

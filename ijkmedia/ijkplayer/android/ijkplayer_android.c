@@ -59,7 +59,7 @@ void ijkmp_android_set_surface_l(JNIEnv *env, IjkMediaPlayer *mp, jobject androi
     if (!mp || !mp->ffplayer || !mp->ffplayer->vout)
         return;
 
-    SDL_VoutAndroid_SetAndroidSurface(env, mp->ffplayer->vout, android_surface);
+    SDL_VoutAndroid_SetAndroidSurface(env, mp->ffplayer->vout, android_surface); //将surface保存在SDL_Vout_Opaque中
     ffpipeline_set_surface(env, mp->ffplayer->pipeline, android_surface);
 }
 

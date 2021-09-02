@@ -158,6 +158,7 @@ IjkMediaPlayer_setDataSourceAndHeaders(
     int retval = 0;
     const char *c_path = NULL;
     IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
+    //判断是否触发Java中的错误提示
     JNI_CHECK_GOTO(path, env, "java/lang/IllegalArgumentException", "mpjni: setDataSource: null path", LABEL_RETURN);
     JNI_CHECK_GOTO(mp, env, "java/lang/IllegalStateException", "mpjni: setDataSource: null mp", LABEL_RETURN);
 
@@ -244,7 +245,7 @@ static void
 IjkMediaPlayer_setVideoSurface(JNIEnv *env, jobject thiz, jobject jsurface)
 {
     MPTRACE("%s\n", __func__);
-    IjkMediaPlayer *mp = jni_get_media_player(env, thiz);
+    IjkMediaPlayer *mp = jni_get_media_player(env, thiz); //获取IjkMediaPlayer
     JNI_CHECK_GOTO(mp, env, NULL, "mpjni: setVideoSurface: null mp", LABEL_RETURN);
 
     ijkmp_android_set_surface(env, mp, jsurface);
