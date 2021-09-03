@@ -2720,6 +2720,7 @@ static void sdl_audio_callback(void *opaque, Uint8 *stream, int len)
     }
 }
 
+//IPNO 准备音频输出
 static int audio_open(FFPlayer *opaque, int64_t wanted_channel_layout, int wanted_nb_channels, int wanted_sample_rate, struct AudioParams *audio_hw_params)
 {
     FFPlayer *ffp = opaque;
@@ -2803,7 +2804,7 @@ static int audio_open(FFPlayer *opaque, int64_t wanted_channel_layout, int wante
     return spec.size;
 }
 
-/* open a given stream. Return 0 if OK */
+/* open a given stream. Return 0 if OK 打开流*/
 static int stream_component_open(FFPlayer *ffp, int stream_index)
 {
     VideoState *is = ffp->is;
@@ -2820,15 +2821,19 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
 
     if (stream_index < 0 || stream_index >= ic->nb_streams)
         return -1;
+    //IPNO获取解码器上下文
     avctx = avcodec_alloc_context3(NULL);
     if (!avctx)
         return AVERROR(ENOMEM);
 
+    //IPNO将流信息赋值到编码器上下文中
     ret = avcodec_parameters_to_context(avctx, ic->streams[stream_index]->codecpar);
     if (ret < 0)
         goto fail;
+    //IPNO把总时间设置到AVCodecContext
     av_codec_set_pkt_timebase(avctx, ic->streams[stream_index]->time_base);
 
+    //IPNO 根据流信息获取解码器
     codec = avcodec_find_decoder(avctx->codec_id);
 
     switch (avctx->codec_type) {
@@ -2838,6 +2843,7 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
         default: break;
     }
     if (forced_codec_name)
+        //IPNO 根据解码器名称获取解码器
         codec = avcodec_find_decoder_by_name(forced_codec_name);
     if (!codec) {
         if (forced_codec_name) av_log(NULL, AV_LOG_WARNING,
@@ -2873,6 +2879,7 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
         av_dict_set_int(&opts, "lowres", stream_lowres, 0);
     if (avctx->codec_type == AVMEDIA_TYPE_VIDEO || avctx->codec_type == AVMEDIA_TYPE_AUDIO)
         av_dict_set(&opts, "refcounted_frames", "1", 0);
+    //IPNO 打开解码器
     if ((ret = avcodec_open2(avctx, codec, &opts)) < 0) {
         goto fail;
     }
@@ -2914,7 +2921,7 @@ static int stream_component_open(FFPlayer *ffp, int stream_index)
         channel_layout = avctx->channel_layout;
 #endif
 
-        /* prepare audio output */
+        /*IPNO prepare audio output 准备音频输出*/
         if ((ret = audio_open(ffp, channel_layout, nb_channels, sample_rate, &is->audio_tgt)) < 0)
             goto fail;
         ffp_set_audio_codec_info(ffp, AVCODEC_MODULE_NAME, avcodec_get_name(avctx->codec_id));
@@ -3057,7 +3064,7 @@ static int is_realtime(AVFormatContext *s)
     return 0;
 }
 
-/* this thread gets the stream from the disk or the network */
+/* this thread gets the stream from the disk or the network 此线程从磁盘或网络获取流*/
 static int read_thread(void *arg)
 {
     FFPlayer *ffp = arg;
@@ -3090,7 +3097,7 @@ static int read_thread(void *arg)
     is->last_subtitle_stream = is->subtitle_stream = -1;
     is->eof = 0;
 
-    ic = avformat_alloc_context();
+    ic = avformat_alloc_context(); //初始化AVFormatContext
     if (!ic) {
         av_log(NULL, AV_LOG_FATAL, "Could not allocate context.\n");
         ret = AVERROR(ENOMEM);
@@ -3099,14 +3106,14 @@ static int read_thread(void *arg)
     ic->interrupt_callback.callback = decode_interrupt_cb;
     ic->interrupt_callback.opaque = is;
     if (!av_dict_get(ffp->format_opts, "scan_all_pmts", NULL, AV_DICT_MATCH_CASE)) {
-        av_dict_set(&ffp->format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE);
+        av_dict_set(&ffp->format_opts, "scan_all_pmts", "1", AV_DICT_DONT_OVERWRITE); //设置参数
         scan_all_pmts_set = 1;
     }
     if (av_stristart(is->filename, "rtmp", NULL) ||
         av_stristart(is->filename, "rtsp", NULL)) {
         // There is total different meaning for 'timeout' option in rtmp
-        av_log(ffp, AV_LOG_WARNING, "remove 'timeout' option for rtmp.\n");
-        av_dict_set(&ffp->format_opts, "timeout", NULL, 0);
+        av_log(ffp, AV_LOG_WARNING, "remove 'timeout' option for rtmp.\n"); 
+        av_dict_set(&ffp->format_opts, "timeout", NULL, 0); //设置超时时间
     }
 
     if (ffp->skip_calc_frame_rate) {
@@ -3119,6 +3126,7 @@ static int read_thread(void *arg)
 
     av_dict_set_intptr(&ffp->format_opts, "video_cache_ptr", (intptr_t)&ffp->stat.video_cache, 0);
     av_dict_set_intptr(&ffp->format_opts, "audio_cache_ptr", (intptr_t)&ffp->stat.audio_cache, 0);
+    //IPNO: 打开视频路径
     err = avformat_open_input(&ic, is->filename, is->iformat, &ffp->format_opts);
     if (err < 0) {
         print_error(is->filename, err);
@@ -3166,6 +3174,7 @@ static int read_thread(void *arg)
                     break;
                 }
             }
+            //IPNO: 查找媒体中的音视频流的信息
             err = avformat_find_stream_info(ic, opts);
         } while(0);
         ffp_notify_msg1(ffp, FFP_MSG_FIND_STREAM_INFO);
@@ -3215,11 +3224,15 @@ static int read_thread(void *arg)
 
     av_dump_format(ic, 0, is->filename, 0);
 
-    int video_stream_count = 0;
-    int h264_stream_count = 0;
-    int first_h264_stream = -1;
+ 
+    int video_stream_count = 0; //记录视频流数量
+    int h264_stream_count = 0;  //记录h264视频流数量
+    int first_h264_stream = -1; //记录h264视频流下标
+    //IPNO: 寻找流信息
     for (i = 0; i < ic->nb_streams; i++) {
+        //IPNO: 获取流信息
         AVStream *st = ic->streams[i];
+        //IPNO:获取流类型
         enum AVMediaType type = st->codecpar->codec_type;
         st->discard = AVDISCARD_ALL;
         if (type >= 0 && ffp->wanted_stream_spec[type] && st_index[type] == -1)
@@ -3228,9 +3241,11 @@ static int read_thread(void *arg)
 
         // choose first h264
 
-        if (type == AVMEDIA_TYPE_VIDEO) {
+
+        //IPNO: 视频流
+        if (type == AVMEDIA_TYPE_VIDEO) { 
             enum AVCodecID codec_id = st->codecpar->codec_id;
-            video_stream_count++;
+            video_stream_count++; 
             if (codec_id == AV_CODEC_ID_H264) {
                 h264_stream_count++;
                 if (first_h264_stream < 0)
@@ -3242,17 +3257,17 @@ static int read_thread(void *arg)
         st_index[AVMEDIA_TYPE_VIDEO] = first_h264_stream;
         av_log(NULL, AV_LOG_WARNING, "multiple video stream found, prefer first h264 stream: %d\n", first_h264_stream);
     }
-    if (!ffp->video_disable)
+    if (!ffp->video_disable)  //视频流
         st_index[AVMEDIA_TYPE_VIDEO] =
             av_find_best_stream(ic, AVMEDIA_TYPE_VIDEO,
                                 st_index[AVMEDIA_TYPE_VIDEO], -1, NULL, 0);
-    if (!ffp->audio_disable)
+    if (!ffp->audio_disable)  //音频流
         st_index[AVMEDIA_TYPE_AUDIO] =
             av_find_best_stream(ic, AVMEDIA_TYPE_AUDIO,
                                 st_index[AVMEDIA_TYPE_AUDIO],
                                 st_index[AVMEDIA_TYPE_VIDEO],
                                 NULL, 0);
-    if (!ffp->video_disable && !ffp->subtitle_disable)
+    if (!ffp->video_disable && !ffp->subtitle_disable) //视频标题
         st_index[AVMEDIA_TYPE_SUBTITLE] =
             av_find_best_stream(ic, AVMEDIA_TYPE_SUBTITLE,
                                 st_index[AVMEDIA_TYPE_SUBTITLE],
@@ -3274,6 +3289,7 @@ static int read_thread(void *arg)
 
     /* open the streams */
     if (st_index[AVMEDIA_TYPE_AUDIO] >= 0) {
+        //IPNO 打开流
         stream_component_open(ffp, st_index[AVMEDIA_TYPE_AUDIO]);
     } else {
         ffp->av_sync_type = AV_SYNC_VIDEO_MASTER;
@@ -4266,11 +4282,12 @@ int ffp_prepare_async_l(FFPlayer *ffp, const char *file_name)
     if (av_stristart(file_name, "rtmp", NULL) ||
         av_stristart(file_name, "rtsp", NULL)) {
         // There is total different meaning for 'timeout' option in rtmp
+        //rtmp中“超时”选项的含义完全不同
         av_log(ffp, AV_LOG_WARNING, "remove 'timeout' option for rtmp.\n");
         av_dict_set(&ffp->format_opts, "timeout", NULL, 0);
     }
 
-    /* there is a length limit in avformat */
+    /* there is a length limit in avformat  avformat中有长度限制*/
     if (strlen(file_name) + 1 > 1024) {
         av_log(ffp, AV_LOG_ERROR, "%s too long url\n", __func__);
         if (avio_find_protocol_name("ijklongurl:")) {
@@ -4295,7 +4312,7 @@ int ffp_prepare_async_l(FFPlayer *ffp, const char *file_name)
     ffp_show_dict(ffp, "swr-opts   ", ffp->swr_opts);
     av_log(NULL, AV_LOG_INFO, "===================\n");
 
-    av_opt_set_dict(ffp, &ffp->player_opts);
+    av_opt_set_dict(ffp, &ffp->player_opts); //设置所有的选项到一个对象中
     if (!ffp->aout) {
         ffp->aout = ffpipeline_open_audio_output(ffp->pipeline, ffp);
         if (!ffp->aout)

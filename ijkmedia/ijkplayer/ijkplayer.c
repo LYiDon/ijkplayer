@@ -133,8 +133,8 @@ IjkMediaPlayer *ijkmp_create(int (*msg_loop)(void*))
 
     fail:
     ijkmp_destroy_p(&mp);
-    return NULL;
-}
+
+0}
 
 void *ijkmp_set_inject_opaque(IjkMediaPlayer *mp, void *opaque)
 {
@@ -314,6 +314,7 @@ void ijkmp_shutdown(IjkMediaPlayer *mp)
 void ijkmp_inc_ref(IjkMediaPlayer *mp)
 {
     assert(mp);
+    //有加/减/与/或/异或/等函数的原子性操作函数(以count = 4为例，调用__sync_fetch_and_add(&count,1),之后，返回值是4，然后，count变成了5.)
     __sync_fetch_and_add(&mp->ref_count, 1);
 }
 
@@ -400,9 +401,9 @@ static int ijkmp_prepare_async_l(IjkMediaPlayer *mp)
 
     assert(mp->data_source);
 
-    ijkmp_change_state_l(mp, MP_STATE_ASYNC_PREPARING);
+    ijkmp_change_state_l(mp, MP_STATE_ASYNC_PREPARING);  //更换状态
 
-    msg_queue_start(&mp->ffplayer->msg_queue);
+    msg_queue_start(&mp->ffplayer->msg_queue);   //消息队列开启
 
     // released in msg_loop
     ijkmp_inc_ref(mp);
@@ -737,12 +738,12 @@ int ijkmp_get_msg(IjkMediaPlayer *mp, AVMessage *msg, int block)
             if (0 == ikjmp_chkst_start_l(mp->mp_state)) {
                 // FIXME: 8 check seekable
                 if (mp->restart) {
-                    if (mp->restart_from_beginning) {
+                    if (mp->restart_from_beginning) {  //IPNO开始位置播放
                         av_log(mp->ffplayer, AV_LOG_DEBUG, "ijkmp_get_msg: FFP_REQ_START: restart from beginning\n");
                         retval = ffp_start_from_l(mp->ffplayer, 0);
                         if (retval == 0)
                             ijkmp_change_state_l(mp, MP_STATE_STARTED);
-                    } else {
+                    } else { //IPNO 指定位置播放
                         av_log(mp->ffplayer, AV_LOG_DEBUG, "ijkmp_get_msg: FFP_REQ_START: restart from seek pos\n");
                         retval = ffp_start_l(mp->ffplayer);
                         if (retval == 0)
